@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-deployer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helm-deployer
+  template:
+    metadata:
+      labels:
+        app: helm-deployer
+    spec:
+      containers:
+        - name: helm-deployer
+          image: aeswibon/helm-deployer:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: "your-db-host"
+            - name: DB_USER
+              value: "your-db-user"
+            - name: DB_PASSWORD
+              value: "your-db-password"
+            - name: DB_NAME
+              value: "your-db-name"
+            - name: DB_PORT
+              value: "your-db-port"

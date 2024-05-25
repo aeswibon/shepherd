@@ -1,0 +1,21 @@
+version: "3"
+silent: true
+tasks:
+  default:
+    desc: List all tasks
+    cmds:
+      - task --list
+  build:
+    desc: Builds the docker image
+    cmds:
+      - docker build -f deployment/Dockerfile -t aeswibon/helm-deployer:latest .
+  push:
+    desc: Pushes the docker image to docker hub
+    cmds:
+      - task: build
+      - docker image push aeswibon/helm-deployer:latest
+  deploy:
+    desc: Deploys the application to kubernetes
+    cmds:
+      - kubectl apply -f deployment/deployment.yaml
+      - kubectl apply -f deployment/services.yaml
