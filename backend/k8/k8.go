@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 	"os/exec"
 
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +17,9 @@ type HelmRequest struct {
 	Namespace   string                 `json:"namespace"`
 	ReleaseName string                 `json:"release_name"`
 	Chart       string                 `json:"chart"`
+	Name        string                 `json:"name"`
+	URL         string                 `json:"url"`
+	Version     string                 `json:"version"`
 	Values      map[string]interface{} `json:"values"`
 }
 
@@ -38,22 +42,36 @@ func NewKubernetesClient(clientset *kubernetes.Clientset) KubernetesClient {
 }
 
 func (k *kubernetesClient) CreateNs(namespace string) error {
+	// Create namespace if it doesn't exist
+	foundNs, err := k.clientset.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	if foundNs.GetName() == namespace || err == nil {
+		log.Println("Namespace already exists ", namespace)
+		return nil
+	}
+	log.Println("Creating namespace", namespace)
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
 	}
-	_, err := k.clientset.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
+	_, err = k.clientset.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
 	return err
 }
 
 func (k *kubernetesClient) InstallChart(req HelmRequest) (string, error) {
+	// Adding the helm repository
+	cmd := exec.Command("helm", "repo", "add", req.Name, req.URL)
+	if err := cmd.Run(); err != nil {
+		log.Println("Failed to add Helm repo:", err)
+		return "", err
+	}
+
 	values, err := json.Marshal(req.Values)
 	if err != nil {
 		return "", err
 	}
 
-	cmd := exec.Command("helm", "install", req.ReleaseName, req.Chart, "--namespace", req.Namespace, "-f", "-")
+	cmd = exec.Command("helm", "install", req.ReleaseName, req.Chart, "--namespace", req.Namespace, "--version", req.Version, "-f", "-")
 	cmd.Stdin = bytes.NewBuffer(values)
 
 	output, err := cmd.CombinedOutput()

@@ -20,6 +20,12 @@ func Deploy(c *gin.Context) {
 		return
 	}
 
+	// Validate request
+	if req.Namespace == "" || req.ReleaseName == "" || req.Chart == "" || req.Name == "" || req.URL == "" || req.Version == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Namespace, release name, chart, name, version and URL are required"})
+		return
+	}
+
 	// Load Kubernetes configuration
 	config, err := clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
 	if err != nil {
@@ -35,7 +41,7 @@ func Deploy(c *gin.Context) {
 
 	kubeClient := k8.NewKubernetesClient(clientset)
 
-	// Create namespace
+	// Create namespace if it doesn't exist
 	if err := kubeClient.CreateNs(req.Namespace); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

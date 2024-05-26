@@ -17,5 +17,21 @@ tasks:
   deploy:
     desc: Deploys the application to kubernetes
     cmds:
+      - kubectl apply -f deployment/pvc.yaml
       - kubectl apply -f deployment/deployment.yaml
-      - kubectl apply -f deployment/services.yaml
+      - kubectl apply -f deployment/service.yaml
+  clean:
+    desc: Cleans the docker image
+    cmds:
+      - docker rmi aeswibon/helm-deployer:latest
+  delete:
+    desc: Deletes the application from kubernetes
+    cmds:
+      - kubectl delete -f deployment/deployment.yaml
+      - kubectl delete -f deployment/service.yaml
+      - kubectl delete -f deployment/pvc.yaml
+      - task: clean
+  logs:
+    desc: Shows the logs of the application
+    cmds:
+      - kubectl logs -l app=helm-deployer

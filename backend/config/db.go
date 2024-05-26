@@ -16,10 +16,11 @@ var DB *gorm.DB
 func ConnectDB() {
 	LoadEnv()
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", GetEnv("DB_HOST"), GetEnv("DB_USER"), GetEnv("DB_PASSWORD"), GetEnv("DB_NAME"), GetEnv("DB_PORT"))
-	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to the database: ", err)
 	}
-	fmt.Println("Connected to database")
-	DB.AutoMigrate(&models.User{})
+	log.Println("Connected to database")
+	DB.AutoMigrate(&models.User{}, &models.Application{})
 }

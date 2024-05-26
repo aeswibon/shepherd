@@ -18,6 +18,21 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	if user.Password == "" || user.Email == "" || user.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username, email and password are required"})
+		return
+	}
+
+	if err := config.DB.Where("username = ?", user.Username).First(&models.User{}).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
+		return
+	}
+
+	if err := config.DB.Where("email = ?", user.Email).First(&models.User{}).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already exists"})
+		return
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})

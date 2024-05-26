@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helm-deployer
+  labels:
+    app: helm-deployer
 spec:
   replicas: 1
   selector:
@@ -19,12 +21,51 @@ spec:
             - containerPort: 8080
           env:
             - name: DB_HOST
-              value: "your-db-host"
+              value: postgres-svc
             - name: DB_USER
-              value: "your-db-user"
+              value: postgres
             - name: DB_PASSWORD
-              value: "your-db-password"
+              value: postgres
             - name: DB_NAME
-              value: "your-db-name"
+              value: helm
             - name: DB_PORT
-              value: "your-db-port"
+              value: 5432
+            - name: JWT_SECRET
+              value: secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: helm
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc

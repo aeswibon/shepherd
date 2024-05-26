@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/aeswibon/helmdeploy/backend/config"
 	"github.com/aeswibon/helmdeploy/backend/handlers"
 	"github.com/aeswibon/helmdeploy/backend/middleware"
@@ -26,5 +29,7 @@ func main() {
 		protected.DELETE("/:id", handlers.DeleteApp)
 	}
 
-	r.Run(config.GetEnv("PORT")) // listen and serve on
+	if err := r.Run(fmt.Sprintf(":%s", config.GetEnv("PORT"))); err != nil {
+		log.Fatal("Failed to run server:", err)
+	}
 }
