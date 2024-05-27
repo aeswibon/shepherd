@@ -7,14 +7,19 @@ import (
 	"github.com/aeswibon/helmdeploy/backend/config"
 	"github.com/aeswibon/helmdeploy/backend/handlers"
 	"github.com/aeswibon/helmdeploy/backend/middleware"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
+
+var secret = []byte(config.GetEnv("SESSION_SECRET"))
 
 func main() {
 	// Connect to the database
 	config.ConnectDB()
 
 	r := gin.Default()
+	r.Use(sessions.Sessions("helmdeployer", cookie.NewStore(secret)))
 
 	// Public routes
 	r.POST("/auth/signup", handlers.Signup)

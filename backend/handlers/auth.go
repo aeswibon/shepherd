@@ -6,6 +6,7 @@ import (
 	"github.com/aeswibon/helmdeploy/backend/config"
 	"github.com/aeswibon/helmdeploy/backend/models"
 	"github.com/aeswibon/helmdeploy/backend/utils"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -72,5 +73,24 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	sessions.Default(c).Set("username", foundUser.Username)
+	sessions.Default(c).Save()
+
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// Logout logs out a user
+func Logout(c *gin.Context) {
+	session := sessions.Default(c)
+	user := session.Get("username")
+	if user == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session token"})
+		return
+	}
+	session.Delete("username")
+	if err := session.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }

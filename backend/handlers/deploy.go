@@ -7,6 +7,7 @@ import (
 	conf "github.com/aeswibon/helmdeploy/backend/config"
 	"github.com/aeswibon/helmdeploy/backend/k8"
 	"github.com/aeswibon/helmdeploy/backend/models"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -61,13 +62,16 @@ func Deploy(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	username := session.Get("username")
+
 	// Store application info in the database
 	app := models.Application{
 		Namespace:    req.Namespace,
 		AppName:      req.ReleaseName,
 		DeployedAt:   time.Now(),
 		HealthStatus: status,
-		Logs:         output,
+		CreatedBy:    username.(string),
 	}
 
 	if err := conf.DB.Create(&app).Error; err != nil {

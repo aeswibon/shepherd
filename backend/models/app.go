@@ -13,5 +13,5 @@ type Application struct {
 	AppName      string    `json:"app_name"`
 	DeployedAt   time.Time `json:"deployed_at"`
 	HealthStatus string    `json:"health_status"`
-	Logs         string    `json:"logs"`
+	CreatedBy    string    `json:"created_by"`
 }
