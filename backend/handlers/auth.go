@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/aeswibon/helmdeploy/backend/config"
@@ -73,8 +74,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	sessions.Default(c).Set("username", foundUser.Username)
-	sessions.Default(c).Save()
+	session := sessions.Default(c)
+	session.Set("username", foundUser.Username)
+	if err := session.Save(); err != nil {
+		log.Println("Error saving session:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }

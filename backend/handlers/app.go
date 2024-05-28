@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	conf "github.com/aeswibon/helmdeploy/backend/config"
@@ -19,7 +20,8 @@ func GetApps(c *gin.Context) {
 	var apps []models.Application
 	session := sessions.Default(c)
 	username := session.Get("username").(string)
-	if err := conf.DB.Where("created_by = ?", username).Error; err != nil {
+	log.Println("Username: ", username)
+	if err := conf.DB.Where("created_by = ?", username).Find(&apps).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -42,28 +44,18 @@ func GetAppLogs(c *gin.Context) {
 		return
 	}
 
-	// Load Kubernetes configuration
-	config, err := clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
-	if err != nil {
+	if err := k8.FetchLogs(&foundApp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
+	var logs []models.Log
+	if err := conf.DB.Where("app_id = ?", id).Find(&logs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	la := k8.NewLogger(clientset, app.Namespace, "Success", "Error")
-
-	// Retrieve logs for the specific application
-	logs, ok := la.LogIndex[app.AppName]
-	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Logs not found for application"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"logs": logs})
+	c.JSON(http.StatusOK, logs)
 }
 
 // DeleteApp deletes an application

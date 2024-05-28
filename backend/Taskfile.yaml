@@ -8,7 +8,7 @@ tasks:
   build:
     desc: Builds the docker image
     cmds:
-      - docker build -f deployment/Dockerfile -t aeswibon/helm-deployer:latest .
+      - docker build -f Dockerfile -t aeswibon/helm-deployer:latest .
   push:
     desc: Pushes the docker image to docker hub
     cmds:

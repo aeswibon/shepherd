@@ -21,17 +21,24 @@ spec:
             - containerPort: 8080
           env:
             - name: DB_HOST
-              value: postgres-svc
+              value: "postgres-svc"
             - name: DB_USER
-              value: postgres
+              value: "postgres"
             - name: DB_PASSWORD
-              value: postgres
+              value: "postgres"
             - name: DB_NAME
-              value: helm
+              value: "helm"
             - name: DB_PORT
-              value: 5432
+              value: "5432"
             - name: JWT_SECRET
-              value: secret
+              value: "secret"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,15 +63,18 @@ spec:
             - containerPort: 5432
           env:
             - name: POSTGRES_DB
-              value: helm
+              value: "helm"
             - name: POSTGRES_USER
-              value: postgres
+              value: "postgres"
             - name: POSTGRES_PASSWORD
-              value: postgres
+              value: "postgres"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
-              subPath: postgres
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
