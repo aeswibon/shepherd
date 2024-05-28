@@ -9,6 +9,7 @@ import (
 	"github.com/aeswibon/helmdeploy/backend/handlers"
 	"github.com/aeswibon/helmdeploy/backend/middleware"
 	"github.com/aeswibon/helmdeploy/backend/utils"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -31,6 +32,8 @@ func main() {
 	utils.InitCron()
 
 	r := gin.Default()
+	r.Use(gin.Logger())
+	r.Use(cors.Default())
 	r.Use(sessions.Sessions("helmdeployer", cookie.NewStore(keyGen())))
 
 	// Public routes
