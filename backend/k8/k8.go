@@ -1,34 +1,20 @@
 package k8
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"fmt"
 	"log"
-	"os/exec"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-// HelmRequest is a struct to hold the request data
-type HelmRequest struct {
-	Namespace   string                 `json:"namespace"`
-	ReleaseName string                 `json:"release_name"`
-	Chart       string                 `json:"chart"`
-	Name        string                 `json:"name"`
-	URL         string                 `json:"url"`
-	Version     string                 `json:"version"`
-	Values      map[string]interface{} `json:"values"`
-}
-
 // KubernetesClient  is an interface to interact with the Kubernetes cluster
 type KubernetesClient interface {
 	CreateNs(namespace string) error
-	InstallChart(req HelmRequest) (string, error)
-	CheckRelease(namespace, releaseName string) (string, error)
-	DeleteRelease(namespace, releaseName string) error
+	DeleteNs(namespace string) error
+	GetLogs(namespace, releaseName string) ([]byte, error)
 }
 
 // Concrete implementation of KubernetesClient
@@ -58,34 +44,41 @@ func (k *kubernetesClient) CreateNs(namespace string) error {
 	return err
 }
 
-func (k *kubernetesClient) InstallChart(req HelmRequest) (string, error) {
-	// Adding the helm repository
-	cmd := exec.Command("helm", "repo", "add", req.Name, req.URL)
-	if err := cmd.Run(); err != nil {
-		log.Println("Failed to add Helm repo:", err)
-		return "", err
+func (k *kubernetesClient) DeleteNs(namespace string) error {
+	if namespace == "default" {
+		log.Println("Cannot delete default namespace")
+		return nil
 	}
-
-	values, err := json.Marshal(req.Values)
-	if err != nil {
-		return "", err
+	// Delete namespace if it exists
+	foundNs, err := k.clientset.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	if foundNs.GetName() != namespace || err != nil {
+		log.Println("Namespace does not exist ", namespace)
+		return nil
 	}
-
-	cmd = exec.Command("helm", "install", req.ReleaseName, req.Chart, "--namespace", req.Namespace, "--version", req.Version, "-f", "-")
-	cmd.Stdin = bytes.NewBuffer(values)
-
-	output, err := cmd.CombinedOutput()
-	return string(output), err
-}
-
-func (k *kubernetesClient) CheckRelease(namespace, releaseName string) (string, error) {
-	cmd := exec.Command("helm", "status", releaseName, "--namespace", namespace)
-	output, err := cmd.CombinedOutput()
-	return string(output), err
-}
-
-func (k *kubernetesClient) DeleteRelease(namespace, releaseName string) error {
-	cmd := exec.Command("helm", "uninstall", releaseName, "--namespace", namespace)
-	_, err := cmd.CombinedOutput()
+	log.Println("Deleting namespace", namespace)
+	err = k.clientset.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
 	return err
+}
+
+func (k *kubernetesClient) GetLogs(namespace, releaseName string) ([]byte, error) {
+	label := fmt.Sprintf("app.kubernetes.io/instance=%s", releaseName)
+	podList, err := k.clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: label,
+	})
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Found %d pods for release %s\n", len(podList.Items), releaseName)
+	logs := ""
+	for _, pod := range podList.Items {
+		podLogs, err := k.clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+			Container: pod.Spec.Containers[0].Name,
+		}).DoRaw(context.Background())
+		log.Printf("Pod %s logs: %s\n", pod.Name, string(podLogs))
+		if err != nil {
+			return nil, err
+		}
+		logs += string(podLogs) + "\n"
+	}
+	return []byte(logs), nil
 }

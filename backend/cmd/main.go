@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/aeswibon/helmdeploy/backend/config"
+	conf "github.com/aeswibon/helmdeploy/backend/config"
 	"github.com/aeswibon/helmdeploy/backend/handlers"
+	"github.com/aeswibon/helmdeploy/backend/k8"
 	"github.com/aeswibon/helmdeploy/backend/middleware"
 	"github.com/aeswibon/helmdeploy/backend/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func keyGen() []byte {
@@ -27,29 +30,54 @@ func keyGen() []byte {
 
 func main() {
 	// Connect to the database
-	config.ConnectDB()
+	conf.ConnectDB()
 	// Initialize cron job
 	utils.InitCron()
 
+	// Load Kubernetes configuration
+	config, err := clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
+	if err != nil {
+		log.Fatalf("Failed to load Kubernetes configuration: %v", err)
+		return
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("Failed to create Kubernetes client: %v", err)
+		return
+	}
+
+	k8Client := k8.NewKubernetesClient(clientset)
+	helmClient, err := k8.NewHelmClient()
+	if err != nil {
+		log.Fatalf("Failed to create Helm client: %v", err)
+	}
+
+	appHandler := handlers.NewAppHandler(k8Client, helmClient)
+
+	// Initialize the Gin engine
 	r := gin.Default()
 	r.Use(gin.Logger())
 	r.Use(cors.Default())
 	r.Use(sessions.Sessions("helmdeployer", cookie.NewStore(keyGen())))
 
-	// Public routes
-	r.POST("/auth/signup", handlers.Signup)
-	r.POST("/auth/login", handlers.Login)
-
-	// Protected routes
-	protected := r.Group("/app", middleware.AuthMiddleware())
+	api := r.Group("/api")
 	{
-		protected.GET("/", handlers.GetApps)
-		protected.GET("/:id/logs", handlers.GetAppLogs)
-		protected.POST("/deploy", handlers.Deploy)
-		protected.DELETE("/:id", handlers.DeleteApp)
+		// Public routes
+		api.POST("/auth/signup", handlers.Signup)
+		api.POST("/auth/login", handlers.Login)
+
+		// Protected routes
+		protected := api.Group("/app", middleware.AuthMiddleware())
+		{
+			protected.GET("/", appHandler.GetApps)
+			protected.GET("/:id/logs", appHandler.GetAppLogs)
+			protected.POST("/deploy", appHandler.Deploy)
+			protected.DELETE("/:id", appHandler.DeleteApp)
+		}
 	}
 
-	if err := r.Run(fmt.Sprintf(":%s", config.GetEnv("PORT"))); err != nil {
+	if err := r.Run(fmt.Sprintf(":%s", conf.GetEnv("PORT"))); err != nil {
 		log.Fatal("Failed to run server:", err)
 	}
 }
