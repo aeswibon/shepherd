@@ -8,8 +8,8 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /helm-deployer cmd/main.go
+RUN go build -o /shepherd cmd/main.go
 
 EXPOSE 8080
 
-CMD ["/helm-deployer"]
+CMD ["/shepherd"]
