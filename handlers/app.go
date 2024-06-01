@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	conf "github.com/aeswibon/helmdeploy/backend/config"
-	"github.com/aeswibon/helmdeploy/backend/k8"
-	"github.com/aeswibon/helmdeploy/backend/models"
+	conf "github.com/aeswibon/shepherd/config"
+	"github.com/aeswibon/shepherd/k8"
+	"github.com/aeswibon/shepherd/models"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/aeswibon/helmdeploy/backend/config"
+	"github.com/aeswibon/shepherd/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 

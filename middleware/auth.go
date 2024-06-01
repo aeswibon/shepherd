@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/aeswibon/helmdeploy/backend/utils"
+	"github.com/aeswibon/shepherd/utils"
 	"github.com/gin-gonic/gin"
 )
 

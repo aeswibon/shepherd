@@ -3,8 +3,8 @@ package utils
 import (
 	"time"
 
-	"github.com/aeswibon/helmdeploy/backend/config"
-	"github.com/aeswibon/helmdeploy/backend/models"
+	"github.com/aeswibon/shepherd/config"
+	"github.com/aeswibon/shepherd/models"
 	"github.com/robfig/cron/v3"
 )
 

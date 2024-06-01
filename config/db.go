@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/aeswibon/helmdeploy/backend/models"
+	"github.com/aeswibon/shepherd/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

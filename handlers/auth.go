@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/aeswibon/helmdeploy/backend/config"
-	"github.com/aeswibon/helmdeploy/backend/models"
-	"github.com/aeswibon/helmdeploy/backend/utils"
+	"github.com/aeswibon/shepherd/config"
+	"github.com/aeswibon/shepherd/models"
+	"github.com/aeswibon/shepherd/utils"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

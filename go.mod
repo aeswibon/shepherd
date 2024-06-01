@@ -1,4 +1,4 @@
-module github.com/aeswibon/helmdeploy/backend
+module github.com/aeswibon/shepherd
 
 go 1.22.3
 
